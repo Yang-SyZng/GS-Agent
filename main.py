@@ -4,8 +4,8 @@ import subprocess
 import time
 import urllib.request
 from pathlib import Path
-from tools import tools, pdf_process
-from agents import build_agent
+from tools import PDFProcessTools
+from agents import DocumentRouterAgent
 import logging
 
 logging.basicConfig(
@@ -16,12 +16,31 @@ logging.basicConfig(
 
 def main():
     print("Loading...")
-    pdf_process.infer()
-    # agent = build_agent(tools=tools)
+    # output = pdf_process.extract_pdf_stats(file_path="database/Papers/2308.04079.pdf")
+    # print(output)
+    # output = pdf_process.extract_text_with_images(pdf_path="database/Papers/2308.04079.pdf", output_dir="database/output", save_md=True, md_path="database/output/test.md")
+    # print(output)
+    agent = DocumentRouterAgent(tools=PDFProcessTools)
+    response = agent.invoke({"messages": [{"role": "user", "content": "帮我判断database/Papers/2308.04079.pdf"}]})
 
-    # response = agent.invoke({"messages": [{"role": "user", "content": "帮我找寻Lin Gao的3DGS方向的最新的3篇论文，并且下载下来"}]})
+    print(response["messages"][-1].content)
 
-    # print(response["messages"][-1].content)
+    # stream = agent.stream(
+    #     {"messages": [{"role": "user", "content": "帮我判断database/Papers/2308.04079.pdf"}]},
+    #     stream_mode="messages",
+    #     print_mode=(),
+    # )
 
+    # print("Streaming response:")
+    # for event in stream:
+    #     if isinstance(event, tuple) and len(event) == 2:
+    #         mode, data = event
+    #         if mode == "messages" and isinstance(data, tuple):
+    #             token, _metadata = data
+    #             print(token, end="", flush=True)
+    #     elif isinstance(event, dict):
+    #         # 如果返回完整数据结构，可按需显示
+    #         print(event)
+    # print()
 if __name__ == "__main__":
     main()

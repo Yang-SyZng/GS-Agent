@@ -35,7 +35,7 @@ def build_model() -> BaseChatModel:
         model=setting.LLM_MODEL_ID,
     )
 
-def build_agent(tools: list):
+def MainAgent(tools: list):
     """Create agent"""
     model = build_model()
     logger.info(f"正在构建Agent...")

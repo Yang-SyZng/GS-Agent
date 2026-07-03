@@ -1,3 +1,5 @@
-from .agent import build_agent
-
-__all__ = ["build_agent"]
+from .MainAgent import MainAgent
+from .DocumentRouterAgent import DocumentRouterAgent
+__all__ = ["MainAgent",
+           "DocumentRouterAgent"
+           ]

@@ -322,7 +322,7 @@ class ArxivQuery:
 
 query = ArxivQuery()
 
-tools = [
+ArxivQueryTools = [
     StructuredTool.from_function(query.search_papers),
     StructuredTool.from_function(query.download_pdf),
     StructuredTool.from_function(query.get_paper_metadata)
