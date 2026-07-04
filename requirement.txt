@@ -1,12 +1,41 @@
+# PyTorch CUDA 12.9 wheels
 --index-url https://download.pytorch.org/whl/cu129
 --extra-index-url https://pypi.org/simple
+
+# UI
+chainlit==2.11.1
+
+# Agent / LLM orchestration
+langchain==1.3.11
+langchain-core==1.4.8
+langchain-openai==1.3.3
+langgraph==1.2.7
+openai==2.43.0
+
+# Configuration
+pydantic==2.13.4
+pydantic-settings==2.14.2
+python-dotenv==1.2.2
+
+# Paper search, Zotero and WebDAV
+arxiv==4.0.0
+pyzotero==1.13.2
+webdavclient3==3.14.7
+
+# PDF parsing / OCR model inference
+PyMuPDF==1.27.2.2
 torch==2.10.0+cu129
 torchvision==0.25.0+cu129
 transformers==4.57.1
+
+# Model utilities kept from the current environment
 Pillow==12.1.1
 matplotlib==3.10.8
 einops==0.8.2
 addict==2.4.0
 easydict==1.13
-pymupdf==1.27.2.2
 psutil==7.2.2
+
+# Optional local API serving
+fastapi==0.139.0
+uvicorn==0.49.0
