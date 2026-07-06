@@ -1,0 +1,1 @@
+# 所有sample均来自OpenAI ChatGPT收集得到，无任何政治目的，仅供学习使用
