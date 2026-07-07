@@ -1,46 +1,55 @@
 from __future__ import annotations
 import os
+from typing import Any
 
-from dotenv import load_dotenv
-from langchain.agents import create_agent
-from langchain.chat_models import BaseChatModel, init_chat_model
-from langchain_openai import ChatOpenAI
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.agent.workflow import (
+    ToolCall,
+    ToolCallResult,
+)
+from llama_index.core.agent.workflow import AgentStream
 import logging
 
 logger = logging.getLogger(__name__)
 
+class BaseFunctionAgent(FunctionAgent):
+    def __init__(self, *args: Any, **kwargs: Any):
+        if "llm" not in kwargs and len(args) <= 5:
+            kwargs["llm"] = self.BuildModel()
 
-SYSTEM_PROMPT = (
-    "你是一个用于检索和整理 arXiv 论文的中文学术助手。"
-    "当用户询问论文、作者、arXiv id、研究方向、相关工作或最新论文时，优先使用 query 工具检索 arXiv。"
-    "如果用户的问题不需要查询 arXiv，可以直接回答。"
-    "回答必须基于工具返回的结果，不要编造论文标题、作者、链接、发表时间或实验结论。"
-    "如果没有找到相关论文，要明确说明没有检索到匹配结果，并可以建议用户换关键词、作者名或分类。"
-    "最终回答默认使用中文，除非用户要求其他语言。"
-    "列出论文时，优先包含标题、作者、发布时间、arXiv 链接和一句简短相关性说明。"
-)
+        super().__init__(*args, **kwargs)
+        logger.info(f"正在构建 {self.name} Agent...")
+        
+    def BuildModel(self,
+    ) -> OpenAILike:
+        """Create the CHAT&Function Calling model"""
+        from config import setting
+        logger.info(f"正在构建LLM...")
+        return OpenAILike(
+            model=setting.LLM_MODEL_ID,
+            api_base=setting.BASE_URL,
+            api_key=setting.API_KEY,
+            is_chat_model=True,
+            is_function_calling_model=True,
+            context_window=128000,
+        )
 
-kong = (
-    "You are a concise ReAct-style assistant. Use tools when they help. "
-    "Explain the final answer clearly in Chinese unless the user asks otherwise."
-)
-
-def build_model() -> BaseChatModel:
-    """Create the chat model"""
-    from config import setting
-    logger.info(f"正在构建LLM...")
-    return ChatOpenAI(
-        api_key=setting.LLM_API_KEY,
-        base_url=setting.LLM_BASE_URL,
-        model=setting.LLM_MODEL_ID,
-    )
-
-def MainAgent(tools: list):
-    """Create agent"""
-    model = build_model()
-    logger.info(f"正在构建Agent...")
-    return create_agent(
-        model=model,
-        tools=tools,
-        system_prompt=SYSTEM_PROMPT,
-    )
+    async def stream_run(self, msg):
+        response = self.run(user_msg="11234 * 4567")
+        async for event in response.stream_events():
+            if isinstance(event, ToolCall):
+                logger.info(f"Tool Call: {event.tool_name}, {event.tool_kwargs}")
+            elif isinstance(event, ToolCallResult):
+                logger.info(f"Tool Result:\n{event.tool_output}")
+            started = False
+            if isinstance(event, AgentStream):
+                delta = event.delta
+                if not started:
+                    delta = delta.lstrip()
+                    started = True
+                print(
+                    delta,
+                    end="",
+                    flush=True
+                )
