@@ -1,67 +1,58 @@
 from __future__ import annotations
-import os
+from typing import List
 
-from langchain_openai import OpenAIEmbeddings
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-import requests
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+from llama_index.core.schema import BaseNode
+
 from config import setting
 import logging
-from typing import List
 
 logger = logging.getLogger(__name__)
 
 
-class Embedding:
+class Embedding(OpenAILikeEmbedding):
     def __init__(self,
-        model: str = None,
+        model_name: str = None,
         api_key: str = None,
-        base_url: str = None,
-        check_embedding_ctx_length: bool = False, # default False
+        api_base: str = None,
     ):
-        self.model = model or setting.EMBEDDING_MODEL_ID
-        self.api_key = api_key or setting.API_KEY
-        self.base_url = base_url or setting.BASE_URL
+        model_name = model_name or setting.EMBEDDING_MODEL_ID
+        logger.info(f"初始化Embedding模型: {model_name}")
 
-        logger.info(f"初始化Embedding模型: {self.model}")
-
-        self.embedding = OpenAIEmbeddings(
-            api_key=self.api_key,
-            base_url=self.base_url,
-            model=self.model,
-            check_embedding_ctx_length=check_embedding_ctx_length,
+        super().__init__(
+            model_name=model_name,
+            api_key=api_key or setting.API_KEY,
+            api_base=api_base or setting.BASE_URL,
         )
 
-    
-    @retry(
-    stop=stop_after_attempt(setting.max_retries),
-    wait=wait_exponential(min=1, max=10),
-    retry=retry_if_exception_type((requests.exceptions.RequestException, TimeoutError)),
-    )
+    def embed_nodes(self, nodes: List[BaseNode]) -> List[BaseNode]:
+        texts = [node.get_content() for node in nodes]
+        embeddings = self.get_text_embedding_batch(texts, show_progress=True)
+
+        for node, embedding in zip(nodes, embeddings):
+            node.embedding = embedding
+
+        return nodes
+
     def embed_text(self, text: list[str] | str):
         try:
             if isinstance(text, str):
                 text = [text]
             logger.info(f"正在生成text的embedding: {text[:50]}")
-            return self.embedding.embed_documents(text)
+            return self.get_text_embedding_batch(text)
         except Exception as e:
             logger.error(f"text embedding错误: {str(e)}")
             raise
-    
-
-    @retry(
-    stop=stop_after_attempt(setting.max_retries),
-    wait=wait_exponential(min=1, max=10),
-    retry=retry_if_exception_type((requests.exceptions.RequestException, TimeoutError)),
-    )
+        
     def embed_query(self, text: str) -> List[float]:
         try:
             logger.debug(f"正在生成查询embedding: {text[:50]}...")
-            return self.embedding.embed_query(text)
+            return self.get_query_embedding(text)
         except Exception as e:
             logger.error(f"查询embedding错误: {str(e)}")
             raise
     
-_embedding = None
+_embedding: Embedding | None = None
 
 
 def get_embedding() -> Embedding:
@@ -74,7 +65,16 @@ def get_embedding() -> Embedding:
 
 
 class LazyEmbedding:
-    def __getattr__(self, name):
+    def embed_nodes(self, nodes: List[BaseNode]) -> List[BaseNode]:
+        return get_embedding().embed_nodes(nodes)
+
+    def embed_text(self, text: list[str] | str):
+        return get_embedding().embed_text(text)
+
+    def embed_query(self, text: str) -> List[float]:
+        return get_embedding().embed_query(text)
+
+    def __getattr__(self, name: str):
         return getattr(get_embedding(), name)
 
 

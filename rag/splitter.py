@@ -1,4 +1,7 @@
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from llama_index.core import Document
+from llama_index.core.node_parser import SentenceSplitter, MarkdownNodeParser
+from llama_index.core.schema import BaseNode, TextNode, RelatedNodeInfo, NodeRelationship
+
 from config import setting
 import logging
 
@@ -9,45 +12,133 @@ class PDFSplitter:
     def __init__(self,
         chunk_size: int = None,
         chunk_overlap: int = None,
-        separator: list[str] = None
+        paragraph_separator: str = "\n\n",
     ):
-        self.chunk_size = chunk_size or setting.chunk_size
-        self.chunk_overlap = chunk_overlap or setting.chunk_overlap
+        self.chunk_size = setting.chunk_size if chunk_size is None else chunk_size
+        self.chunk_overlap = setting.chunk_overlap if chunk_overlap is None else chunk_overlap
+        self.paragraph_separator = paragraph_separator
 
-        self.separators = separator or [
-            # "\n\n\n",  # 章节分隔
-            "\n\n",  # 段落分隔
-            "\n（",  # 行分隔
-            "。", # Chinese
-            "\n",
-            "，", # Chinese
-            "；", # Chinese
-            # ". ",  # 句子分隔
-            # ", ",  # 子句分隔
-            # " ",  # 单词分隔
-            # "",  # 字符分隔
-        ]
+        self.markdown_parser = MarkdownNodeParser()
 
-        self.splitter = RecursiveCharacterTextSplitter(
+        self.splitter = SentenceSplitter(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
-            separators=self.separators,
-            length_function=len,
-            is_separator_regex=False
+            paragraph_separator=self.paragraph_separator,
         )
 
         logger.info(
             f"初始化文本切分器: chunk_size={self.chunk_size}, "
             f"chunk_overlap={self.chunk_overlap}"
         )
-    
-    def SplitText(self, text: str) -> list[str]:
-        logger.debug(f"分割文本，长度: {len(text)}")
-        chunks = self.splitter.split_text(text)
-        logger.info(f"文本分割完成，生成{len(chunks)}个分块")
-        return chunks
 
-    # def __call__(self, text: str) -> list[str]:
-    #     return self.SplitText(text)
+    def load_markdown(self, path: str, metadata: dict | None = None) -> Document:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+
+        return Document(
+            text=text,
+            metadata=metadata or {},
+        )
     
-splitter = PDFSplitter()
+    def SplitByParagraph(
+        self,
+        nodes: list[BaseNode],
+        paragraph_separator: str | None = None,
+    ) -> list[TextNode]:
+        """按段落分隔符切分节点，并保留原节点 metadata 和 SOURCE 关系。"""
+        separator = paragraph_separator or self.paragraph_separator
+        paragraph_nodes: list[TextNode] = []
+        paragraph_index = 0
+
+        for node in nodes:
+            text = node.get_content()
+            parts = [part.strip() for part in text.split(separator) if part.strip()]
+
+            for local_paragraph_index, part in enumerate(parts):
+                relationships = dict(node.relationships)
+                relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=node.node_id)
+                paragraph_nodes.append(
+                    TextNode(
+                        text=part,
+                        metadata={
+                            **node.metadata,
+                            "paragraph_index": paragraph_index,
+                            "local_paragraph_index": local_paragraph_index,
+                        },
+                        relationships=relationships,
+                    ),
+                )
+                paragraph_index += 1
+
+        logger.info("段落切分完成，生成%s个段落节点", len(paragraph_nodes))
+        return paragraph_nodes
+
+    def SplitMarkdownDocument(self, document: Document) -> list[BaseNode]:
+        markdown_nodes = self.markdown_parser.get_nodes_from_documents([document])
+        paragraph_nodes = self.SplitByParagraph(markdown_nodes)
+        nodes = self.splitter.get_nodes_from_documents(paragraph_nodes)
+        logger.info("Markdown文档切分完成，生成%s个节点", len(nodes))
+        return nodes
+
+    def SplitMarkdownFile(
+        self,
+        path: str,
+        metadata: dict | None = None,
+    ) -> list[BaseNode]:
+        document = self.load_markdown(path, metadata=metadata)
+        return self.SplitMarkdownDocument(document)
+
+
+_splitter: PDFSplitter | None = None
+
+
+def get_PDFSplitter() -> PDFSplitter:
+    global _splitter
+
+    if _splitter is None:
+        _splitter = PDFSplitter()
+
+    return _splitter
+
+
+class LazyPDFSplitter:
+    @property
+    def chunk_size(self) -> int:
+        return get_PDFSplitter().chunk_size
+
+    @property
+    def chunk_overlap(self) -> int:
+        return get_PDFSplitter().chunk_overlap
+
+    @property
+    def paragraph_separator(self) -> str:
+        return get_PDFSplitter().paragraph_separator
+
+    def load_markdown(self, path: str, metadata: dict | None = None) -> Document:
+        return get_PDFSplitter().load_markdown(path, metadata=metadata)
+
+    def SplitByParagraph(
+        self,
+        nodes: list[BaseNode],
+        paragraph_separator: str | None = None,
+    ) -> list[TextNode]:
+        return get_PDFSplitter().SplitByParagraph(
+            nodes,
+            paragraph_separator=paragraph_separator,
+        )
+
+    def SplitMarkdownDocument(self, document: Document) -> list[BaseNode]:
+        return get_PDFSplitter().SplitMarkdownDocument(document)
+
+    def SplitMarkdownFile(
+        self,
+        path: str,
+        metadata: dict | None = None,
+    ) -> list[BaseNode]:
+        return get_PDFSplitter().SplitMarkdownFile(path, metadata=metadata)
+
+    def __getattr__(self, name: str):
+        return getattr(get_PDFSplitter(), name)
+
+
+splitter = LazyPDFSplitter()
