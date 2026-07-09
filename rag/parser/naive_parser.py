@@ -146,7 +146,7 @@ class PDFTypeDetector:
         return result
 
 
-class NativeTextPDFProcess:
+class NativeTextPDFParser:
     """原生文本 PDF：直接使用 PyMuPDF 提取文本。"""
 
     def extract_text(self, pdf_path: str | Path) -> str:
@@ -164,16 +164,16 @@ class NativeTextPDFProcess:
         return output
 
 
-class ScannedPDFProcess:
+class ScannedPDFParser:
     """扫描件 PDF：将页面转为图片后调用 OCR。"""
 
     def __init__(self):
-        self._ocr: PDFProcessOCR | None = None
+        self._ocr: PDFOCRParser | None = None
 
     @property
-    def ocr(self) -> "PDFProcessOCR":
+    def ocr(self) -> PDFOCRParser:
         if self._ocr is None:
-            self._ocr = PDFProcessOCR()
+            self._ocr = PDFOCRParser()
         return self._ocr
 
     def extract_text(self, pdf_path: str | Path, dpi: int = 300) -> str:
@@ -194,12 +194,12 @@ class ScannedPDFProcess:
                 shutil.rmtree(image_dir, ignore_errors=True)
 
 
-class MixedLayoutPDFProcess:
+class MixedLayoutPDFParser:
     """图文混排 PDF：保留版面块顺序提取文本，必要时可回退 OCR。"""
 
     def __init__(self):
-        self.native_parser = NativeTextPDFProcess()
-        self.scanned_parser = ScannedPDFProcess()
+        self.native_parser = NativeTextPDFParser()
+        self.scanned_parser = ScannedPDFParser()
 
     def detect_layout_blocks(
         self,
@@ -257,7 +257,7 @@ class MixedLayoutPDFProcess:
         return output
 
 
-class PDFProcessOCR:
+class PDFOCRParser:
     """OCR 技术基于百度 Unlimited-OCR。"""
 
     def __init__(self):
@@ -325,13 +325,13 @@ def pdf_to_images(pdf_path: str | Path, dpi: int = 300) -> tuple[list[str], str]
     return image_paths, tmp_dir
 
 
-class PDFProcess:
+class PDFParser:
     """统一 PDF 处理入口"""
 
     def __init__(self):
-        self.native_text_parser = NativeTextPDFProcess()
-        self.scanned_image_parser = ScannedPDFProcess()
-        self.mixed_layout_parser = MixedLayoutPDFProcess()
+        self.native_text_parser = NativeTextPDFParser()
+        self.scanned_image_parser = ScannedPDFParser()
+        self.mixed_layout_parser = MixedLayoutPDFParser()
 
     def extract_pdf_stats(self, pdf_path: str) -> dict[str, Any]:
         """提取 PDF 文本、图片和版面统计信息。"""
@@ -393,12 +393,12 @@ class PDFProcess:
         }
 
 
-pdf_process = PDFProcess()
+pdf_parser = PDFParser()
 
-PDFProcessTools = [
-    pdf_process.extract_pdf_stats,
-    pdf_process.detect_pdf_type,
-    pdf_process.detect_layout_blocks,
-    pdf_process.extract_text,
-    pdf_process.parse_pdf,
+PDFParserTools = [
+    pdf_parser.extract_pdf_stats,
+    pdf_parser.detect_pdf_type,
+    pdf_parser.detect_layout_blocks,
+    pdf_parser.extract_text,
+    pdf_parser.parse_pdf,
 ]

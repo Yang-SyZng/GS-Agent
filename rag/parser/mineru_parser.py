@@ -40,13 +40,13 @@ def _ensure_pdf_path(pdf_path: str | Path) -> Path:
     return path
 
 
-class MinerUPDFProcess:
+class MinerUPDFParser:
     """
     基于 MinerU CLI 的 PDF 解析工具。
     """
 
     def __init__(self, output_dir: str | Path | None = None, timeout: int = 1800):
-        self.output_dir = Path(output_dir or setting.pdf_process_save_dir)
+        self.output_dir = Path(output_dir or setting.pdf_parser_save_dir)
         self.timeout = timeout
 
     def _check_mineru_cli(self) -> str:
@@ -210,9 +210,9 @@ class MinerUPDFProcess:
             raise RuntimeError(f"MinerU 未生成 Markdown 输出: {result['output_dir']}")
         return markdown
 
-mineru_pdf_process = MinerUPDFProcess()
+mineru_parser = MinerUPDFParser()
 
-MinerUPDFProcessTools = [
-    mineru_pdf_process.parse_pdf,
-    mineru_pdf_process.extract_markdown,
+MinerUPDFParserTools = [
+    mineru_parser.parse_pdf,
+    mineru_parser.extract_markdown,
 ]
