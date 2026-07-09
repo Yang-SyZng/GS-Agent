@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     pdf_save_dir: Path = Path("./database/Papers")
 
     # pdf process save config
-    pdf_process_save_dir: Path = Path("./database/pdf_ocr_results")
+    pdf_parser_save_dir: Path = Path("./database/parser")
 
     # rag config
     chunk_size: int = 400
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
         super().__init__()
         self.Milvus_directory.mkdir(parents=True, exist_ok=True)
         self.pdf_save_dir.mkdir(parents=True, exist_ok=True)
-        self.pdf_process_save_dir.mkdir(parents=True, exist_ok=True)
+        self.pdf_parser_save_dir.mkdir(parents=True, exist_ok=True)
         (self.mainly_save_dir / "Cache").mkdir(parents=True, exist_ok=True)
 
 setting = Settings()
