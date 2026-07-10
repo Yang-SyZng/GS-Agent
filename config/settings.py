@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     pdf_parser_save_dir: Path = Path("./database/parser")
 
     # rag config
-    chunk_size: int = 400
+    chunk_size: int = 300
     chunk_overlap: int = 50
 
 
