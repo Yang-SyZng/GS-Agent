@@ -43,13 +43,6 @@ class MilvusVectorClient:
         self.milvusvector.load_collection(self.collection_name)
         self._use_string_id = self._collection_uses_string_id()
 
-    @property
-    def client(self) -> MilvusClient:
-        return self.milvusvector
-
-    def __getattr__(self, name: str):
-        return getattr(self.milvusvector, name)
-
     def _collection_uses_string_id(self) -> bool:
         description = self.milvusvector.describe_collection(self.collection_name)
         for field in description.get("fields", []):
@@ -102,30 +95,45 @@ class MilvusVectorClient:
         logger.info(f"成功添加{len(ids)}个文档")
         return ids
 
-    def search(self, query: str, top_k: int = 5):
-        """在向量知识库中搜索与查询相关的文档。
+    def search(
+        self,
+        query: Sequence[float],
+        filters: str | dict[str, list[str]] | None = None,
+        top_k: int = 5,
+    ):
+        if isinstance(query, (str, bytes)):
+            raise TypeError("query must be an embedding vector, not text")
 
-        当 agent 需要检索项目知识、已索引文档，或查找与用户问题在语义上
-        相似的上下文片段时使用此工具。
-
-        Args:
-            query: 自然语言搜索查询，用于描述需要检索的信息。
-            top_k: 最多返回的相关结果数量，默认为 5。
-
-        Returns:
-            按向量相似度排序的 Milvus 搜索结果。每条结果可能包含匹配文档
-            的 id、相似度分数、文本、元数据和序列化后的节点数据，具体字段
-            取决于集合的输出配置。
-        """
-        vector = embedding.embed_query(query)
+        milvus_filter = filters if isinstance(filters, str) else None
+        limit = top_k if milvus_filter else max(top_k * 10, top_k)
         res = self.milvusvector.search(
             collection_name=self.collection_name,
-            data=[vector],
-            limit=top_k,
-            output_fields=["text", "metadata"]
+            data=[list(query)],
+            limit=limit,
+            output_fields=["text", "metadata"],
+            filter=milvus_filter,
         )
 
-        return res[0]
+        hits = res[0]
+        if isinstance(filters, dict):
+            hits = [hit for hit in hits if self._matches_metadata_filters(hit, filters)]
+
+        return hits[:top_k]
+
+    def _matches_metadata_filters(
+        self,
+        hit: Any,
+        filters: dict[str, list[str]],
+    ) -> bool:
+        entity = hit.get("entity", {}) if isinstance(hit, dict) else {}
+        metadata = entity.get("metadata", {})
+
+        for key, allowed_values in filters.items():
+            value = metadata.get(key)
+            if value not in allowed_values:
+                return False
+
+        return True
 
 
 milvusvector = MilvusVectorClient()

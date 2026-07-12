@@ -1,5 +1,5 @@
 from typing import List
-from .paper_schema import SectionNode
+from ..schema.paper_schema import SectionNode
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import TextNode
 from config import setting

@@ -57,7 +57,7 @@ class Embedding(OpenAILikeEmbedding):
             logger.error(f"text embedding错误: {str(e)}")
             raise
         
-    def embed_query(self, text: str) -> List[float]:
+    async def embed_query(self, text: str) -> List[float]:
         try:
             logger.debug(f"正在生成查询embedding: {text[:50]}...")
             return self.get_query_embedding(text)
