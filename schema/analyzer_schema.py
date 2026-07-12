@@ -17,34 +17,49 @@ class QueryTarget(str, Enum):
     BACKGROUND = "background"
     OTHER = "other"
 
-class QueryAnalysis(BaseModel):
+class SectionType(str, Enum):
+    ABSTRACT = "abstract"
+    INTRODUCTION = "introduction"
+    RELATED_WORK = "related_work"
+    BACKGROUND = "background"
+    METHOD = "method"
+    EXPERIMENT = "experiment"
+    RESULT = "result"
+    CONCLUSION = "conclusion"
+    REFERENCE = "reference"
+    SUPPLEMENTARY = "supplementary"
 
-    original_query: str
-    
-    query_type: QueryType = Field(
-        description="用户问题的类型"
+class QueryAnalysis(BaseModel):
+    original_query: str = Field(
+        description="用户的原始问题，必须原样保留"
     )
 
-    target: QueryTarget = Field(
-        description="用户关注的信息类型"
+    query_type: QueryType = Field(
+        description="用户问题的任务类型"
+    )
+
+    targets: list[QueryTarget] = Field(
+        default_factory=list,
+        description="用户关注的一个或多个信息维度"
     )
 
     paper_names: list[str] = Field(
         default_factory=list,
-        description="涉及的论文名称"
+        description="用户明确提到的论文名称"
     )
 
     entities: list[str] = Field(
         default_factory=list,
-        description="方法/模型/数据集等实体"
+        description="方法、模型、数据集、指标和技术等关键实体"
     )
 
     keywords: list[str] = Field(
         default_factory=list,
-        description="检索关键词"
+        description="用于 Dense Retrieval 或 BM25 的英文检索关键词"
     )
 
-    section_types: list[str] = Field(
+    section_types: list[SectionType] = Field(
         default_factory=list,
-        description="建议检索章节类型"
+        description="建议优先检索的语义章节类型"
     )
+    
