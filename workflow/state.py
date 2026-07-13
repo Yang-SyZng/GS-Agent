@@ -1,30 +1,51 @@
-from typing import TypedDict, List, Optional, Dict, Any
+from __future__ import annotations
 
+from typing import TypedDict, Literal
+from pydantic import BaseModel
+from schema.analyzer_schema import QueryAnalysis
+from schema.evaluator_schema import RetrievalEvaluation
+from schema.researcher_schema import ResearchResult
 
-class ResearchState(TypedDict):
-    # Search
+from typing_extensions import NotRequired
+
+class AgentState(TypedDict):
+    # 输入
     query: str
-    max_result: int
-    papers: List[Dict[str, Any]]
+    # analysis: QueryAnalysis
+    analysis: QueryAnalysis
 
-    # Download
-    selected_paper_id: Optional[str]
-    pdf_path: Optional[str]
+    # 检索
+    # retrieved_nodes: list
+    retrieved_nodes: NotRequired[list]
+    # retrieval_evaluation: RetrievalEvaluation
+    retrieval_evaluation: NotRequired[RetrievalEvaluation]
 
-    # Parse
-    extracted_text: Optional[str]
-    text_length: Optional[int]
+    # 缺失知识
+    # missing_papers: list[str]
+    # acquisition_queries: list[str]
 
-    # Extract
+    # 外部获取
+    # resolved_papers: list[PaperResolution]
+    # pdf_paths: list[str]
+    # ingested_paper_ids: list[str]
 
-    # Index
-    documents: List[str]  # 文档对象列表
-    vector_ids: List[str]  # 向量ID列表
-    indexed: bool  # 是否已索引
+    # 流程控制
+    retrieval_round: int
+    # arxiv_retry_count: int
+    # errors: list[str]
 
-    # QA
-    question: Optional[str]  # 用户问题
-    retrieved_docs: List[str]  # 检索到的文档
-    context: Optional[str]  # 上下文
-    answer: Optional[str]  # 最终答案
+    # 输出
+    research_result: NotRequired[ResearchResult]
+    answer: NotRequired[str]
 
+class PaperResolution(BaseModel):
+    paper_name: str
+    source: Literal["zotero", "arxiv"] | None = None
+    status: Literal[
+        "pending",
+        "resolved",
+        "not_found",
+        "processing_failed"
+    ]
+    pdf_path: str | None = None
+    error: str | None = None
