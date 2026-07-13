@@ -20,7 +20,7 @@ class RetrievalEvaluator:
             context_window=128000,
         )
 
-        self.llm = llm_model or llm
+        self.llm = llm or llm_model
 
         self.prompt = PromptTemplate(EvaluatorPrompt)
 

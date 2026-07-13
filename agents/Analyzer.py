@@ -19,7 +19,7 @@ class QueryAnalyzer:
             context_window=128000,
         )
 
-        self.llm = llm_model or llm
+        self.llm = llm or llm_model
 
         self.prompt = PromptTemplate(AnalyzerPrompt)
 
@@ -29,7 +29,5 @@ class QueryAnalyzer:
             prompt=self.prompt,
             query=query,
         )
-
-        result.original_query = query
-
+        
         return result
