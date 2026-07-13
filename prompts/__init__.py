@@ -1,6 +1,5 @@
-from .prompts import AnalyzerDescription, AnalyzerPrompt
+from .prompts import AnalyzerPrompt
 
 __all__ = [
-    "AnalyzerDescription",
     "AnalyzerPrompt",
     ]
