@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     ZoteroID: str | None = None
     ZoteroKeys: str | None = None
+    
+    TAVILY_API_KEY: str | None = None
 
     WEBDAV_HOSTNAME: str | None = None
     WEBDAV_LOGIN: str | None = None
