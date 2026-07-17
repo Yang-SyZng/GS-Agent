@@ -14,33 +14,21 @@ Query:
 
 ## Objectives
 
-1. Preserve the original query.
-
-2. Determine whether the query concerns:
+1. Determine whether the query concerns:
    - one explicitly identified paper;
    - multiple explicitly identified papers;
    - or a general research topic.
 
-3. Identify the user's primary research intent.
+2. Identify the user's primary research intent.
 
-4. Extract explicitly mentioned paper names and important scientific entities.
+3. Extract explicitly mentioned paper names and important scientific entities.
 
-5. Recommend the semantic section types that should be prioritized during
+4. Recommend the semantic section types that should be prioritized during
    retrieval.
 
-6. Generate concise English keywords suitable for Dense Retrieval and BM25.
+5. Generate concise English keywords suitable for Dense Retrieval and BM25.
 
 ## Field definitions
-
-### original_query
-
-Copy the complete user input exactly as provided.
-
-Requirements:
-  - Do not translate it.
-  - Do not summarize or rewrite it.
-  - Do not correct spelling or grammar.
-  - Do not remove, add, or normalize spaces or punctuation.
 
 ### query_type
 
@@ -188,9 +176,7 @@ Requirements:
   - Do not answer the user's question.
   - Do not explain the classification.
   - Do not expose chain-of-thought or internal reasoning.
-  - `original_query` must exactly match the user input.
-  - Except for `original_query`, categorical values and ordinary retrieval terms
-    must be written in English.
+  - Categorical values and ordinary retrieval terms must be written in English.
   - `query_type`, `targets`, and `section_types` must strictly use the allowed
     values defined above.
 
@@ -201,7 +187,6 @@ EchoGS 里面的 EchoNet 是什么？
 
 Output:
 {
-  "original_query": "EchoGS 里面的 EchoNet 是什么？",
   "query_type": "single_paper",
   "targets": ["method"],
   "paper_names": ["EchoGS"],
@@ -210,6 +195,38 @@ Output:
   "keywords": ["EchoGS", "EchoNet", "architecture", "method"]
 }
 """
+
+AnalyzerRefinementPrompt = """
+You are refining a scientific-literature retrieval plan after an earlier
+retrieval and research attempt did not fully answer the user's question.
+
+## Inputs
+
+Original user query:
+{query}
+
+Current query analysis:
+{current_analysis}
+
+Missing information identified by the retrieval evaluator:
+{missing_information}
+
+Limitations identified by the researcher:
+{limitations}
+
+## Instructions
+
+- Return only an object conforming to the `QueryAnalysis` schema.
+- Preserve the original query scope and explicitly named papers.
+- Focus the new `entities`, `keywords`, `targets`, and `section_types` on the
+  missing information and limitations.
+- Prefer retrieval terms that differ from the current plan and are likely to
+  occur verbatim in scientific papers.
+- Keep keywords concise, in English, unique, and between 3 and 8 items.
+- Do not answer the user and do not invent paper names.
+- Use only allowed enum values from the schema.
+"""
+
 
 EvaluatorPrompt = """
 You are a Retrieval Sufficiency Evaluator for a scientific literature RAG
@@ -369,12 +386,6 @@ The following are not sufficient evidence by themselves:
 
 ## Output field requirements
 
-### original_query
-
-Copy `{query}` exactly.
-
-Do not translate, summarize, correct, or rewrite it.
-
 ### sufficient
 
 Set to `true` only when the retrieved evidence is adequate to answer all major
@@ -459,12 +470,11 @@ Do not answer the original query or summarize detailed paper findings.
   - Do not answer the user's question.
   - Do not summarize the papers.
   - Do not expose chain-of-thought or internal reasoning.
-  - Preserve `original_query` exactly.
   - Write `missing_information` and `reason` in English.
 """
 
-ResearchSynthesizerPrompt="""
-You are a Research Synthesizer specialized in scientific literature analysis, 
+ResearcherPrompt="""
+You are a Researcher specialized in scientific literature analysis,
 particularly 3D Gaussian Splatting (3DGS).
 
 Your task is to synthesize structured research findings from the retrieved paper evidence.
@@ -510,6 +520,10 @@ Retrieved Evidence:
 
 7. Explicitly record missing, conflicting, ambiguous, or insufficient information in `limitations`.
 
+8. Set `sufficient` to true only when the findings and evidence can completely
+   and reliably answer all major requirements of the original query. Otherwise,
+   set it to false and describe what is missing in `limitations`.
+
 ## Task-specific guidance
 
 - For method questions, focus on:
@@ -549,4 +563,82 @@ Retrieved Evidence:
 - Do not expose chain-of-thought or internal reasoning.
 - Write synthesized findings in English.
 
+"""
+
+
+MatcherPrompt = """
+You are a scientific paper metadata matcher.
+
+Your task is to determine whether exactly one search result reliably refers to
+the paper requested by the user. The result will be used to decide whether a
+PDF may be downloaded automatically.
+
+## Inputs
+
+Target paper:
+{target_paper}
+
+Search source:
+{source}
+
+Candidate metadata:
+{candidates}
+
+## Matching rules
+
+1. Use only the supplied metadata. Do not rely on outside knowledge.
+2. Strong identifiers take priority: an identical DOI, arXiv ID, PMID, or other
+   source identifier is sufficient unless the titles clearly conflict.
+3. Otherwise compare normalized titles. Ignore capitalization, punctuation,
+   repeated whitespace, and harmless subtitle formatting.
+4. Acronyms, abbreviated titles, translations, and minor spelling differences
+   may support a match only when authors, year, abstract, or identifiers provide
+   corroborating evidence.
+5. A related topic, shared keywords, or a similar method name alone is not a
+   paper match.
+6. If multiple candidates remain equally plausible, return `unmatched`.
+7. Set `candidate_index` to the exact zero-based `candidate_index` shown in the
+   selected candidate. Never invent or renumber an index.
+8. For `matched`, copy all available metadata from the selected candidate into
+   the corresponding output fields:
+   - `paper_id`: use the candidate's source-specific paper identifier;
+   - `title`: use the candidate's canonical paper title;
+   - `authors`: preserve the author names and their original order;
+   - `abstract`: copy the abstract without summarizing or rewriting it;
+   - `doi`: copy the DOI exactly as supplied;
+   - `published_date`: copy the publication date exactly as supplied;
+   - `pdf_url`: copy the direct PDF URL when available;
+   - `source`: use the candidate source, or `{source}` when the candidate does
+     not contain a source field;
+   - `categories`: copy the supplied category value without inventing any
+     additional categories.
+9. Metadata field names may vary across sources. Apply only these safe aliases:
+   - `paper_id`: `paper_id`, `arxiv_id`, `id`, `pmid`, `openalex_id`;
+   - `title`: `title`, `name`;
+   - `authors`: `authors`, `author`;
+   - `abstract`: `abstract`, `summary`;
+   - `doi`: `doi`;
+   - `published_date`: `published_date`, `published`, `publication_date`, `year`;
+   - `pdf_url`: `pdf_url`, `pdf`, `url_pdf`;
+   - `categories`: `categories`, `category`, `subjects`.
+   Do not map a general landing-page URL to `pdf_url` unless the metadata
+   explicitly identifies it as a PDF URL.
+10. Never fabricate, infer, translate, summarize, or complete missing metadata.
+    For a matched paper, use null for unavailable scalar fields and an empty
+    list for unavailable `authors`.
+11. For `unmatched`, set `candidate_index`, `source`, `paper_id`, `title`,
+    `abstract`, `doi`, `published_date`, `pdf_url`, and `categories` to null;
+    set `authors` to an empty list; and keep confidence below 0.5.
+12. The selected metadata must come from one candidate only. Never combine
+    fields from different candidates.
+13. Use `matched` only when confidence is at least 0.8.
+
+## Output requirements
+
+- Return only an object conforming to the provided `PaperMatchResult` schema.
+- Copy the target paper into `target_paper` exactly.
+- Populate every schema field, including fields whose value is null or empty.
+- Do not output Markdown.
+- Do not expose chain-of-thought.
+- Keep `reason` concise and in English.
 """
