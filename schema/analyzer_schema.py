@@ -30,35 +30,31 @@ class SectionType(str, Enum):
     SUPPLEMENTARY = "supplementary"
 
 class QueryAnalysis(BaseModel):
-    original_query: str = Field(
-        description="用户的原始问题，必须原样保留"
-    )
-
     query_type: QueryType = Field(
-        description="用户问题的任务类型"
+        description="The type of task for the user's question."
     )
 
     targets: list[QueryTarget] = Field(
         min_length=1,
-        description="用户关注的一个或多个信息维度"
+        description="One or more of the information dimensions that the user is concerned about."
     )
 
     paper_names: list[str] = Field(
-        description="用户明确提到的论文名称"
+        description="The exact title of the paper that the user explicitly mentioned."
     )
 
     entities: list[str] = Field(
         min_length=3,
-        description="方法、模型、数据集、指标和技术等关键实体"
+        description="Key entities such as methods, models, datasets, metrics, and technologies."
     )
 
     keywords: list[str] = Field(
         min_length=3,
         max_length=8,
-        description="用于检索的英文关键词"
+        description="English keywords for retrieval"
     )
 
     section_types: list[SectionType] = Field(
         min_length=1,
-        description="建议优先检索的语义章节类型"
+        description="The recommended types of semantic chapters to be retrieved first"
     )

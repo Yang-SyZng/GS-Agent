@@ -50,6 +50,10 @@ class ResearchResult(BaseModel):
         description="支撑研究结论的论文证据"
     )
 
-    limitations: list[str] = Field(
+    limitations: list[str | None] = Field(
         description="当前证据无法确定、缺失或存在歧义的信息"
+    )
+
+    sufficient: bool = Field(
+        description="当前研究结果是否足以完整、可靠地回答用户问题"
     )
