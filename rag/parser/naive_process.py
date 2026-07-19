@@ -3,7 +3,7 @@ from typing import List
 import hashlib
 
 from llama_index.core import Document
-from ...schema.paper_schema import SectionNode, SectionType, SECTION_KEYWORDS, CHILD_KEYWORDS
+from schema.paper_schema import SectionNode, SectionType, SECTION_KEYWORDS, CHILD_KEYWORDS
 
 def load_markdown(path: str, metadata: dict | None = None) -> Document:
     with open(path, "r", encoding="utf-8") as f:
@@ -36,12 +36,12 @@ def build_front_matter_node(front_matter: list[str], paper_id: str,) -> SectionN
 
     return node
 
-def parse_nodes(data: Document, pattern: str = r'(?=^#{1,3}\s)') -> List[SectionNode]:
+def parse_nodes(data: Document, pattern: str = r'(?=^#{1,3}\s)', paper_id: str = "unknown",) -> List[SectionNode]:
     split_1 = split_section(data, pattern)
     front_matter, split_2 = split_title(split_1)
     nodes = level_resolver(split_2)
 
-    front_node = build_front_matter_node(front_matter, 'AbsGS')
+    front_node = build_front_matter_node(front_matter, paper_id)
 
     return front_node, nodes
 
@@ -217,4 +217,3 @@ def classify_child(node: SectionNode, parent_type: SectionType):
             break
 
     return semantic_type
-

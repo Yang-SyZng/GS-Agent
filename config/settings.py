@@ -54,7 +54,14 @@ class Settings(BaseSettings):
     # Milvus config
     Milvus_directory: Path = Path("./database/Milvus")
     Milvus_db_directory: Path = Milvus_directory / "database.db"
-    Milvus_collection_name: str = "arxiv_papers"
+    # Built-in BM25 requires Milvus Standalone/Distributed or Zilliz Cloud.
+    # Milvus Lite database files do not support full-text search.
+    Milvus_uri: str = "http://localhost:19530"
+    Milvus_token: str = ""
+    Milvus_collection_name: str = "arxiv_papers_hybrid"
+    Milvus_hybrid_ranker: str = "RRFRanker"
+    Milvus_rrf_k: int = 60
+    Milvus_hybrid_weights: list[float] = [1.0, 0.5]
     
     # pdf save config
     pdf_save_dir: Path = Path("./database/Papers")

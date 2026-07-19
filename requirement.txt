@@ -23,7 +23,8 @@ python-dotenv==1.2.2
 
 # Paper search, Zotero and WebDAV
 arxiv==4.0.0
-pymilvus==3.0.0
+pymilvus==2.6.17
+llama-index-vector-stores-milvus==1.1.0
 pyzotero==1.13.2
 webdavclient3==3.14.7
 

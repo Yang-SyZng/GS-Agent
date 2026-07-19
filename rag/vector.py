@@ -1,145 +1,129 @@
-import hashlib
-import json
-from pathlib import Path
-from typing import Any, List, Sequence, Dict
+from __future__ import annotations
 
-from pymilvus import MilvusClient, DataType, Function, FunctionType
-from llama_index.core.schema import BaseNode
-from llama_index.core.tools import FunctionTool
+import logging
+import os
+from typing import Any
+from urllib.parse import urlparse
 
-from .embedding import embedding
+from llama_index.core import VectorStoreIndex
+from llama_index.core.schema import TextNode
+from llama_index.core.vector_stores import (
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+)
+from llama_index.vector_stores.milvus import MilvusVectorStore
 
 from config import setting
-import logging
-from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-class MilvusVectorClient:
-    def __init__(self,
-        collection_name: str = None,
-        collection_dim: int = None,
-        db_directory: str = None,
-    ):
-        self.collection_name = collection_name or setting.Milvus_collection_name
-        self.db_directory = db_directory or setting.Milvus_db_directory
-        self.embedding_fn = embedding
-        self.collection_dim = collection_dim or setting.EMBEDDING_DIM
 
-        logger.info(f"初始化向量数据库...")
+def _bypass_proxy_for_local_milvus(uri: str) -> None:
+    """绕过代理"""
 
-        self.milvusvector = MilvusClient(
-            str(self.db_directory),
-        )
+    hostname = urlparse(uri).hostname
+    if hostname not in {"localhost", "127.0.0.1", "::1"}:
+        return
+    required = ("localhost", "127.0.0.1", "::1")
+    for key in ("NO_PROXY", "no_proxy"):
+        existing = [item.strip() for item in os.environ.get(key, "").split(",") if item.strip()]
+        os.environ[key] = ",".join(dict.fromkeys([*existing, *required]))
 
-        if not self.milvusvector.has_collection(self.collection_name):
-            self.milvusvector.create_collection(
-                collection_name=self.collection_name,
-                dimension=self.collection_dim,
-                id_type="string",
-                max_length=128,
-                metric_type="IP",
-            )
-        self.milvusvector.load_collection(self.collection_name)
-        self._use_string_id = self._collection_uses_string_id()
 
-    def _collection_uses_string_id(self) -> bool:
-        description = self.milvusvector.describe_collection(self.collection_name)
-        for field in description.get("fields", []):
-            if field.get("name") != "id":
-                continue
-            field_type = str(field.get("type", "")).upper()
-            return "VARCHAR" in field_type or "STRING" in field_type
-        return False
-
-    def _node_id_to_int(self, node_id: str) -> int:
-        digest = hashlib.blake2b(node_id.encode("utf-8"), digest_size=8).digest()
-        return int.from_bytes(digest, byteorder="big", signed=False) & ((1 << 63) - 1)
-
-    def _node_to_row(self, node: BaseNode) -> dict[str, Any]:
-        if node['embedding'] is None:
-            raise ValueError(f"节点 {node.node_id} 缺少 embedding，请先调用 embedding.embed_nodes(nodes)")
-
-        # node_id = str(node.node_id)
-        # row_id: str | int = node_id if self._use_string_id else self._node_id_to_int(node_id)
-
-        return {
-            "id": node['id_'],
-            "vector": node['embedding'],
-            # "node_id": node_id,
-            "text": node['text'],
-            "metadata": node['metadata'],
-            # "node_json": json.dumps(node.to_dict(), ensure_ascii=False),
-        }
-
-    def add_documents(
+class MilvusHybridClient:
+    def __init__(
         self,
-        nodes: List[Dict],
-    ) -> list[Any]:
-        # if isinstance(nodes, List[Dict]):
-        #     nodes = [nodes]
+        collection_name: str | None = None,
+        collection_dim: int | None = None,
+        uri: str | None = None,
+    ) -> None:
+        self.collection_name = collection_name or setting.Milvus_collection_name
+        self.collection_dim = collection_dim or setting.EMBEDDING_DIM
+        self.uri = uri or setting.Milvus_uri
+        _bypass_proxy_for_local_milvus(self.uri)
 
-        # missing_embeddings = [node for node in nodes if node.embedding is None]
-        # if missing_embeddings:
-        #     self.embedding_fn.embed_nodes(missing_embeddings)
-
-        rows = [self._node_to_row(node) for node in tqdm(nodes, desc="processing")]
-        if not rows:
-            return []
-
-        result = self.milvusvector.insert(
-            collection_name=self.collection_name,
-            data=rows,
+        logger.info(
+            "Init Milvus hybrid retrieve: uri=%s, collection=%s, ranker=%s",
+            self.uri,
+            self.collection_name,
+            setting.Milvus_hybrid_ranker,
         )
-        ids = result.get("ids", [])
-        logger.info(f"成功添加{len(ids)}个文档")
+        self.vector_store = MilvusVectorStore(
+            uri=self.uri,
+            token=setting.Milvus_token,
+            collection_name=self.collection_name,
+            dim=self.collection_dim,
+            enable_dense=True,
+            enable_sparse=True,
+            hybrid_ranker=setting.Milvus_hybrid_ranker,
+            hybrid_ranker_params=self._ranker_params(),
+            similarity_metric="IP",
+            overwrite=False,
+        )
+
+    def _ranker_params(self) -> dict[str, Any]:
+        if setting.Milvus_hybrid_ranker == "WeightedRanker":
+            return {"weights": setting.Milvus_hybrid_weights}
+        return {"k": setting.Milvus_rrf_k}
+
+    def add_documents(self, nodes: list[dict[str, Any] | TextNode]) -> list[str]:
+        """text -> BM25 sparse vectors"""
+
+        text_nodes = [self._to_text_node(node) for node in nodes]
+        if not text_nodes:
+            return []
+        ids = self.vector_store.add(text_nodes)
+        logger.info("成功添加 %d 个文档", len(ids))
         return ids
 
-    def search(
+    async def search(
         self,
-        query: Sequence[float],
-        filters: str | dict[str, list[str]] | None = None,
+        query_text: str,
+        *,
+        embed_model: Any,
+        filters: dict[str, list[str]] | None = None,
         top_k: int = 5,
-    ):
-        if isinstance(query, (str, bytes)):
-            raise TypeError("query must be an embedding vector, not text")
+    ) -> list[Any]:
+        """Native dense + BM25 retrieval and Milvus rank fusion."""
 
-        milvus_filter = filters if isinstance(filters, str) else None
-        limit = top_k if milvus_filter else max(top_k * 10, top_k)
-        res = self.milvusvector.search(
-            collection_name=self.collection_name,
-            data=[list(query)],
-            limit=limit,
-            output_fields=["text", "metadata"],
-            filter=milvus_filter,
+        index = VectorStoreIndex.from_vector_store(
+            self.vector_store,
+            embed_model=embed_model,
+        )
+        retriever = index.as_retriever(
+            vector_store_query_mode="hybrid",
+            similarity_top_k=top_k,
+            filters=self._metadata_filters(filters),
+        )
+        return await retriever.aretrieve(query_text)
+
+    @staticmethod
+    def _to_text_node(node: dict[str, Any] | TextNode) -> TextNode:
+        if isinstance(node, TextNode):
+            return node
+        return TextNode(
+            id_=str(node.get("id_") or node.get("id")),
+            text=str(node.get("text") or ""),
+            metadata=node.get("metadata") or {},
+            embedding=node.get("embedding"),
         )
 
-        hits = res[0]
-        if isinstance(filters, dict):
-            hits = [hit for hit in hits if self._matches_metadata_filters(hit, filters)]
-
-        return hits[:top_k]
-
-    def _matches_metadata_filters(
-        self,
-        hit: Any,
-        filters: dict[str, list[str]],
-    ) -> bool:
-        entity = hit.get("entity", {}) if isinstance(hit, dict) else {}
-        metadata = entity.get("metadata", {})
-
-        for key, allowed_values in filters.items():
-            value = metadata.get(key)
-            if value not in allowed_values:
-                return False
-
-        return True
+    @staticmethod
+    def _metadata_filters(
+        filters: dict[str, list[str]] | None,
+    ) -> MetadataFilters | None:
+        if not filters:
+            return None
+        grouped_filters = [
+            MetadataFilter(key=key, value=values, operator=FilterOperator.IN)
+            for key, values in filters.items()
+        ]
+        return MetadataFilters(
+            filters=grouped_filters,
+            condition=FilterCondition.AND,
+        )
 
 
-milvusvector = MilvusVectorClient()
-
-ragtools = [
-    FunctionTool.from_defaults(
-        fn=milvusvector.search
-        ),
-]
+MilvusVectorClient = MilvusHybridClient

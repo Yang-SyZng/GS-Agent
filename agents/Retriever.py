@@ -19,11 +19,11 @@ class PaperRetriever:
         top_k: int = 5,
     ) -> list[Any]:
         query_text = self._build_query(query, analysis)
-        query_embedding = await self._embed_query(query_text)
         filters = self._build_filters(analysis)
 
-        results = self.vector_store.search(
-            query=query_embedding,
+        results = await self.vector_store.search(
+            query_text=query_text,
+            embed_model=self.embed_model,
             top_k=top_k,
             filters=filters,
         )
@@ -45,9 +45,6 @@ class PaperRetriever:
                 if part and part.strip()
             )
         )
-
-    async def _embed_query(self, query: str) -> list[float]:
-        return await self.embed_model.embed_query(query)
 
     def _build_filters(self, analysis: QueryAnalysis) -> dict[str, list[str]] | None:
         filters: dict[str, list[str]] = {}

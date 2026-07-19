@@ -1,5 +1,5 @@
 from typing import List
-from ..schema.paper_schema import SectionNode
+from schema.paper_schema import SectionNode
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import TextNode
 from config import setting
@@ -16,7 +16,11 @@ def flatten_tree(nodes: List[SectionNode]):
 
     return flatten_results
 
-def splitter_chunks(nodes: List[SectionNode], paragraph_separator: str = "\n\n") -> List[TextNode]:
+def splitter_chunks(
+    nodes: List[SectionNode],
+    paragraph_separator: str = "\n\n",
+    paper_id: str = "unknown",
+) -> List[TextNode]:
     splitter = SentenceSplitter(
         chunk_size=setting.chunk_size,
         chunk_overlap=setting.chunk_overlap,
@@ -31,8 +35,8 @@ def splitter_chunks(nodes: List[SectionNode], paragraph_separator: str = "\n\n")
             chunks_node = TextNode(
                 text=chunk,
                 metadata={
-                    "chunk_id": idx,
-                    "paper_id": "absgs",
+                    "chunk_id": f"{node.section_id}:{idx}",
+                    "paper_id": paper_id.lower(),
                     "section_id": node.section_id,
                     "section_title": node.title,
                     "level": node.level,
