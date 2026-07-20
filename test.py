@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import asyncio
 import logging
 
@@ -69,9 +69,9 @@ async def main():
     #     )
 
     result = await graph.ainvoke({
-        "user_query": "FSGS 的实验结果"
+        "user_query": "GS-SLAM的创新点是什么"
     })
 
-    print(result["research_result"])
+    print(result.get("answer") or result.get("external_search_results") or result["retrieval_evaluated_result"])
 if __name__ == "__main__":
     asyncio.run(main())

@@ -5,35 +5,36 @@ from .nodes import (
     analyzer_node,
     retriever_node,
     evaluator_node,
-    researcher_node,
     increment_research_round_node,
     refine_analysis_node,
+    external_search_node,
+    writer_node,
 )
+from schema.evaluator_schema import RetrievalStatus
 
 builder = StateGraph(AgentState)
 
-def inJudge_Retrieve_sufficient(state: AgentState) -> Literal["sufficient", "insufficient"]:
-    if state["retrieval_evaluated_result"].sufficient:
-        return "sufficient"
-    else:
-        return "insufficient"
+def route_retrieval(state: AgentState) -> Literal["not_found", "insufficient", "sufficient"]:
+    return state["retrieval_evaluated_result"].status.value
 
-def inJudge_Researcher_sufficient(state: AgentState) -> Literal["sufficient", "insufficient"]:
-    if state["research_result"].sufficient:
-        return "sufficient"
 
-    if state.get("retrieval_round", 0) >= 2:
-        return "sufficient"
+def route_refinement(state: AgentState) -> Literal["retry", "stop"]:
+    return "stop" if state.get("retrieval_round", 0) >= 3 else "retry"
 
-    return "insufficient"
+
+def route_external_search(state: AgentState) -> Literal["retry", "stop"]:
+    if state.get("knowledge_updated") and state.get("external_search_round", 0) <= 2:
+        return "retry"
+    return "stop"
 
 # ::workflow add_node::
 builder.add_node("analyzer", analyzer_node)
 builder.add_node("retriever", retriever_node)
 builder.add_node("evaluator", evaluator_node)
-builder.add_node("researcher", researcher_node)
 builder.add_node("increment_research_round", increment_research_round_node)
 builder.add_node("refine_analysis", refine_analysis_node)
+builder.add_node("external_search", external_search_node)
+builder.add_node("writer", writer_node)
 
 # ::workflow start::
 builder.add_edge(START, "analyzer")
@@ -42,25 +43,32 @@ builder.add_edge("analyzer", "retriever")
 builder.add_edge("retriever", "evaluator")
 builder.add_conditional_edges(
     "evaluator",
-    inJudge_Retrieve_sufficient,
+    route_retrieval,
     {
-        "sufficient": "researcher",
-        "insufficient": "researcher",  # 暂时
+        RetrievalStatus.NOT_FOUND.value: "external_search",
+        RetrievalStatus.INSUFFICIENT.value: "increment_research_round",
+        RetrievalStatus.SUFFICIENT.value: "writer",
     }
 )
-
-builder.add_edge("researcher", "increment_research_round")
-
 builder.add_conditional_edges(
     "increment_research_round",
-    inJudge_Researcher_sufficient,
+    route_refinement,
     {
-        "sufficient": END,
-        "insufficient": "refine_analysis",
+        "retry": "refine_analysis",
+        "stop": "writer",
     }
 )
 
 builder.add_edge("refine_analysis", "retriever")
+builder.add_conditional_edges(
+    "external_search",
+    route_external_search,
+    {
+        "retry": "retriever",
+        "stop": END,
+    },
+)
+builder.add_edge("writer", END)
 
 
 graph = builder.compile()

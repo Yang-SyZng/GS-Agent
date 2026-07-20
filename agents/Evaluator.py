@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from prompts.prompts import EvaluatorPrompt
-from schema.evaluator_schema import RetrievalEvaluation
+from schema.evaluator_schema import RetrievalEvaluation, RetrievalStatus
 
 from llama_index.llms.openai_like import OpenAILike
 try:
@@ -39,7 +39,7 @@ class RetrievalEvaluator:
             ) -> RetrievalEvaluation:
         if not retrieved_nodes:
             return RetrievalEvaluation(
-                sufficient=False,
+                status=RetrievalStatus.NOT_FOUND,
                 missing_papers=analysis.paper_names,
                 missing_information=[
                     "No relevant evidence was retrieved"

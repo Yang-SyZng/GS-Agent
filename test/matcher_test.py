@@ -5,7 +5,8 @@ from agents.Matcher import PaperMatcher
 
 async def main():
     paper_matcher = PaperMatcher()
-    result = await paper_matcher.match("GTLR-GS")
+    result = await paper_matcher.match("FastGS")
+    print(result)
     result = await paper_matcher.download(result)
     print(result)
 

@@ -19,13 +19,14 @@ def build_front_matter_node(front_matter: list[str], paper_id: str,) -> SectionN
     if not front_matter:
         return None
 
-    front_text = "\n\n".join(front_matter).strip()
-    if not front_text:
+    title = front_matter[0].strip()
+    content = "\n\n".join(front_matter[1:]).strip()
+    if not title and not content:
         return None
 
     node = SectionNode(
-        title=front_matter[0],
-        content=front_matter[1],
+        title=title or "Paper Metadata",
+        content=content,
         level=1,
     )
 

@@ -232,8 +232,8 @@ EvaluatorPrompt = """
 You are a Retrieval Sufficiency Evaluator for a scientific literature RAG
 system, particularly research related to 3D Gaussian Splatting (3DGS).
 
-Your task is to determine whether the retrieved evidence is sufficient to
-accurately answer the user's original query.
+Your task is to classify the retrieval result into exactly one routing state
+and identify the evidence that can be used to answer the user's query.
 
 You must evaluate the evidence only. You must not answer the user's question
 or synthesize the paper content.
@@ -251,7 +251,12 @@ Retrieved Evidence:
 
 ## Objectives
 
-1. Determine whether the retrieved evidence covers the user's primary intent.
+1. Select exactly one `status`:
+   - `not_found`: the explicitly requested paper/source is not represented by
+     valid evidence, or retrieval returned no evidence for the requested topic.
+   - `insufficient`: the correct paper/topic is represented, but the evidence
+     does not cover all major information required by the query.
+   - `sufficient`: the evidence directly covers all major requirements.
 
 2. Identify which retrieved chunks are relevant and usable as evidence.
 
@@ -282,9 +287,9 @@ For `single_paper` queries:
 
   - The evidence must come from the paper explicitly requested by the user.
   - A chunk from another paper must not be treated as evidence for the requested paper.
-  - The evidence must cover the primary target identified in `analysis.target`.
-  - If the requested paper is not represented by valid evidence, set
-    `sufficient` to `false` and include it in `missing_papers`.
+  - The evidence must cover the primary targets identified in `analysis.targets`.
+  - If the requested paper is not represented by valid evidence, set status to
+    `not_found` and include it in `missing_papers`.
 
 ### Multi-paper queries
 
@@ -294,8 +299,8 @@ For `multi_paper` queries:
   - The evidence for each paper must cover the comparison dimension requested
     by the user.
   - Evidence from only some of the requested papers is insufficient.
-  - If any requested paper lacks usable evidence, set `sufficient` to `false`
-    and include that paper in `missing_papers`.
+  - If any requested paper lacks usable evidence, set status to `not_found` and
+    include that paper in `missing_papers`.
   - If all papers are present but cannot be compared using the same requested
     dimension, record the missing dimension in `missing_information`.
 
@@ -313,7 +318,7 @@ For `general_search` queries:
 
 ## Target-specific requirements
 
-Use `analysis.target` and `analysis.section_types` to determine the expected
+Use `analysis.targets` and `analysis.section_types` to determine the expected
 evidence coverage.
 
 ### method
@@ -386,12 +391,10 @@ The following are not sufficient evidence by themselves:
 
 ## Output field requirements
 
-### sufficient
+### status
 
-Set to `true` only when the retrieved evidence is adequate to answer all major
-requirements of the original query.
-
-Otherwise, set it to `false`.
+Return exactly one of `not_found`, `insufficient`, or `sufficient` according to
+the routing definitions above.
 
 ### missing_papers
 
@@ -451,19 +454,24 @@ Do not answer the original query or summarize detailed paper findings.
 
 ## Consistency requirements
 
-  - If `sufficient` is `true`, both `missing_papers` and
+  - If status is `sufficient`, both `missing_papers` and
     `missing_information` must be empty.
-  - If an explicitly requested paper has no valid evidence, `sufficient` must be
-    `false`.
-  - If any major requested information is missing, `sufficient` must be `false`.
+  - If an explicitly requested paper has no valid evidence, status must be
+    `not_found`.
+  - If the correct source exists but major requested information is missing,
+    status must be `insufficient`.
   - `relevant_chunk_ids` may contain usable partial evidence even when
-    `sufficient` is `false`.
+    status is not `sufficient`.
   - Every ID in `relevant_chunk_ids` must exist in the provided evidence.
   - Do not infer that a paper is missing merely because one expected section is
     absent; distinguish between a missing paper and missing information.
 
 ## Output requirements
 
+  - `missing_papers` is for absent explicitly requested papers only. If it is
+    non-empty, status must be `not_found`.
+  - Use `insufficient`, not `not_found`, when the requested paper is present but
+    a relevant section or detail is missing.
   - Return only an object conforming to the provided `RetrievalEvaluation`
     schema.
   - Do not output Markdown.
@@ -471,6 +479,28 @@ Do not answer the original query or summarize detailed paper findings.
   - Do not summarize the papers.
   - Do not expose chain-of-thought or internal reasoning.
   - Write `missing_information` and `reason` in English.
+"""
+
+WriterPrompt = """
+You are the final answer writer for a scientific literature RAG system.
+
+Answer the user's question using only the supplied evidence. Cite supporting
+chunks inline using `[chunk_id]`. Do not invent facts or citations. Clearly
+state any limitation that is visible in the evidence. Preserve official names,
+technical terms, metrics, and numerical values exactly. Match the language of
+the user's query and return only the final answer.
+
+Original Query:
+{query}
+
+Query Analysis:
+{analysis}
+
+Retrieval Evaluation:
+{evaluation}
+
+Evidence:
+{contexts}
 """
 
 ResearcherPrompt="""
