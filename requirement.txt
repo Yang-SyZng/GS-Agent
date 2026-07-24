@@ -13,6 +13,7 @@ llama-index==0.14.23
 llama-index-core==0.14.23
 llama-index-llms-openai-like==0.7.2
 llama-index-embeddings-openai-like==0.3.1
+ollama>=0.6.0
 openai==2.44.0
 vllm==0.21.0
 
@@ -36,6 +37,7 @@ torchvision==0.26.0
 torchaudio==2.11.0
 transformers==4.57.6
 huggingface-hub==0.36.2
+peft>=0.17.0
 
 # Model utilities kept from the current environment
 Pillow==12.2.0
@@ -81,3 +83,7 @@ websockets==15.0.1
 # Optional local API serving
 fastapi==0.139.0
 uvicorn==0.50.2
+
+# Evaluation and optional search integrations
+ragas>=0.3.0
+tavily-python>=0.7.0

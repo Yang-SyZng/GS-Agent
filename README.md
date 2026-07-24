@@ -2,77 +2,180 @@
 
 ## 技术栈
 
-概述：LlamaIndex | LangGraph | Agentic RAG | Milvus | Chainlit | RAGAS | Qwen | DeepSeek
+概述：LlamaIndex | LangGraph | Agentic RAG | Milvus | MCP | MinerU | FastAPI | Ollama | RAGAS | PEFT/LoRA
 
 详细信息：
 
-| 组件 | 技术选型 | 版本 | 用途 |
-|------|:---:|------|------|
-| Agent / RAG 框架 | ![Qwen](https://img.shields.io/badge/LLAMAINDEX-000000?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAGp0lEQVR4nNSZW2wcVxnHv3Nmd2722nFsZzfQxqkTmghMFEcVbeDBxQaEKeQRkSIhKgR5oJSCeIkUeOAiKtpItCoKpQ+oErShVan6UBy1Tty4pZgUu8SunbXru7327vqyXu/szs7uzJzqnJnZHde7Y6+abdqjo0/HZ8/o+83/u8zuGMPHbHyigPZ/92F/U6iuveMj5PEEwrx09JEXg998oP2ZYfmOto8GCHl8Jt52+MSzY8gAMCC/Er3+0Je0lYVqA3kpJOw7gHSg0wChPnTozOPVpgEAXwmOUEvLj34rt3y25mAb0gFMZInU2N4tNLdoK3NVBeK2b7X+9I/7uk7z9UFkIDAAGRQImYBNbKjKxujrVQUqEbL8WpwS0GAhOpk8VCodmk6cqipNaYU2/tebmQvriVW+tskv7WEigSUSLzUtXHqc6LnqAXlVmb9+38mnFxDBtkgmtdfOHUsv3agekFeVyfvvRCa2C82ZfN3+6tHsABQ49AULwkptYCklNx2uKlCJsi+MmtARO1is0MCkmSTtbb1lQHwgyOQp0oABcn3LLQPisACsTRdokAlSQ3UV8sohM6vZXVF3Kl+HQGMbwv7qAXkppMannYy25UEGcCAcPPmzxGw/QhxCPiAAZh7MnKmreS2pqWu6rlYLKLMULgKxJ5oVviP3/r6w9hEQEBEQtSIGAQjRErl0VM+uTk1denv4b0lluSKgEp26MBo/09XY2sX6YZEGuRs3gIiIiKiVEIiYrmt5cW9tU2jP7cdaO7vvebCl+YiSWVlJ7vZ7ixdQIHSs+c5voO00JnAmCAgkSkCFEbG1tpksSgkRGePDwc997fh3gnX7Rb9wX/v9Z+/7w5mOh/N5dSTy/5JOvR4dew588e4fvmGhgIvJHSbL8hTCtYmZZfoJCHhrB0BgN8DOwKkLX/3v7MB2p15VpsRHTS0LrirDOvgJvXUJORY7a+yahY+wbWXk2qeW/LzjwZJOvYD0bDI28k+bRkfYoHcpWw4KzphjGbMAIepYdlzKyCaQHSvbcaT73zp6r+ATtjv1qjIAyCZmaW80gSOEZ5nhjpSzsHdETMNkRdAuuq2RdeJrYshhny77RU3XKgPKrE9hg1aTgIllaWZgN02RSbTSxeVb3HKAfsrTRpIFkj1/9c8JNVmxQonIW+JWGcpbEIsaMMEQuwHXMQ7yAKpupruffqD3vf+U9LjDL9d0YmJx+C8SIlsS2UoXJ3WcHVJMbTuj7ayiLQqZHGQB0kAyK0qkHM2ufkpf6/3J6txr7tqRcbG4ZLylmopnnNRmPUnHoAJk2Ewn1JiHu52BCDEuvXw6uzHllBURbcGKakmFHezeoed5lLc4gFB5ADLEzHwoIADQtOQb/b+iMWLOaphIMitg21o7W/4kEjY4KozCaBS2oDMY4AWubO7u9u3H8NgLyvq47cxqKthl0QctCxMTxqZhCwbUJOO7bj/4YYEA4J13L0rFprelXxe6JUsp049yM2sTz73zgh0pcKYdtXQoUFvOyw5l7x43Zq5InecEDCI4TytWzE/1PRpeHmmu2ctjLq1tRpKRcGx8ORX/8qG7Th+/G0CjjYf1HrZQAbJ1Qlm/FQBtpKIStpuN6LTj/nDPY6/+uuR5TNXPMAgNiGpjUTK1uYa/CUCxjVnIbUpirdX0eAQZde2hiz8od340Om0SBVOF3CJRshOfbih3VWWv9BbjI8Wmh8lMbCylpcodjqbWn79+2ar5wcXxwcUJlkn0z68f2ceh0t98KgOajAzJmCzEx1g1kfDysPf57//jwiN9L+lmys9p9zz5p1+88i/DTAEo9UKudW/NTQAKR4ZkBC8NPZtMLUvYHJh9y/u8pufP9rz8u8uvBARDN83z/dce6x+w6i6l5W8C0OzqexIm0ysTl8d7OMi+PvXmbq6aWo2ntE1r/cS/R3Uz/fZiNKp88IuHNSpIagDYzCZlRBbW5+cTMwDp/O7ey9zRKE+u2s+vpc3sSDS2vKmUO1yZQp+qCy5tzLwbG4srUYBMJp/d8RIOofuPH7g6PV/Y0Y2M6Ct7JxUA1YmBs50//vvQRUJIsLZuVVnOm/qOV/3yK58/2MC9OGK/mWyQuLYQbGTLPl93G7Luo13Pf++pWp47f/XJ3jMXOlrbxmIT3pfcVi8/8+2TnYcaesbnI5u2lk+cCko+dXCxbLPYLZBJjN+89qiipdI5pW9yoG/yzRvxWe9LDuyRr0xGrkzOPXc9Yu2IPhSOq+deTf11sGwOfezGJ+qfL7dkvB8AAP//3ihWwwjUx5IAAAAASUVORK5CYII=) | 0.14.23 | Prompt、结构化输出、Embedding 与 RAG 组件 |
-| 工作流编排 | ![LangGraph](https://img.shields.io/badge/LangGraph-181F33?style=for-the-badge&logo=LangGraph&logoColor=8BC0F0) | 1.2.7 | 基于 StateGraph 编排 Agent 工作流 |
-| 交互界面 | ![ChainLit](https://img.shields.io/badge/ChainLit-EA335C?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAFcUlEQVR4nMRYe2xVNRj/2tNzJ2qUzGwhgEK4Ahm6gIMpkMDUMBOjCCrqSBwsMTBAcU72x4yRxMR/jDGMOR/LYGSZRBTnIzGyubhdpiiybGxRNzcS9yDOV5yvRJOd09acx733nJ727N47B02zdF/br79+bX+/ez7yL6kmgGDWCwdrFW63UdwiFgqcEIAZA+KeNZB0pfgAFLCIg4g9X+oiXUzyTYfaJSP/L0Dha3N/PEKWswCltYNMC+fuYbpHaq+IULLLhc1J8n9IWD2N4N6EqykdmRggjPReMGRDAe9cDtw5Mu4fy/3vwBs+7y65H2gw0DyDXvcOIQAmHw0yL7N5wiGXOqVlaV4uP1AEaxdZF6J7HNV8pvVNzAAPR4ZWSQDL0KBpkZklq3DDI3hOJGFhhsmefI80fJUZHAocxyMkVPC3BaxWpfnzcON2LxoAwDrBrzxICxcq3E5fVYBCqguLV2zAERLcJSYaryzKGNAMiHHTMlUPWr0w05ufKSB6/VyyMFvplWf8FDNlar5hSVh370X/aId7p1f7RITShQOwJV/ZSSnUxpJakaTT+Ftx4mcZUdyYnI2tmU4FLra9Fk8XjWbj++SAmEnp0y3k7KhRVmiTSdCVn6QdS/Kv95VxLra5/JWx2m1YF9+X+dMfZvNZvv4lUtdlPHuXfrTUbN1Hl+coHxTnfuJ3/yID77WJMdWDmyq7NXJ0pxsPSlnbALx7HnVd0EYmHaNRUqAffywRMHbqG/igH8UuaGOT0y5CbUB74oAkd43mz+cVd6A1i6wt9Y6jupjW94Pxwr169d1m+wB66qT23c+iV4SM93frm1eKIZz4HTqG0OFOTbjyAUDlKukwSwrwsTIv+1nKsKuZvNk9tXt9pOFLYEzud3E2GnxeSpvMMOn+E3rDGRUgpXTQvFx8ZIfg1FKG+kfpTfMi9Z8Do6r7oY3+xj7sky6JdaLVbTfXLg6RDpB28AObBJ1yPWbpvPJO1axkbemRAnK0Bao2hUgHA8mRAaxTU1/xChWtJVro9DBjDGOZZwBYs1jlQS2uSPltRBZk0xvmSg86Dotrv/zFRn9VbgmhtI8Mzo0o3QHwjUsl7CUgax9Uzu8dUzFTgKnj3ejQJ8wwlR633uLOQkEqdziXobpP5R4Yg8PtoBCGAFPHB2l9F+n+48ykUjz4npV0yXXyCNkojZJCbWCC7WsWMVFmVp8knUMepgavE+0gWqW4eKD1jLG2r9k1V7B51+Irs7xdSMM0mqOdOBe8m2zBXHqkTH9ui5GF9Zfb2Ef97Cqdz4nwP/9hHQN8TxN5u1sVd4v9DLRzeunA2FyaCxuXwf0FuDgfa+4WpvYei9R3uTvPuZpvXA5bC/ADaxJ8YTzepL8eC/PsLzZTox12ssH3XRk2Z8V8/mopKcozalr1qndoNIdXFEPxzTiaKzxy84thcvuLoDj0EEClcekQPkvVyDQ8VV4UeeO0uW01btwlnKZTOGN09UHSr5QtFSASoBChARILpZHXOmjefNxUjrN0uevYAOkfTwuNs0pmv6nt338VxZoCjVVautN3O6PsB4fbomH9scGMAWX6pa7SKQBz8m8y9KPPszSXIoKx4o4lv1yBy2lUIM/zo0rXnd8CZT4Prj4G3MqZOjgoIDFBcKi2VaoM1lfHoVO+9+FOdGzcZwwEQqH2csn0Va1nhD7RKGoLY+Yzb5Ezw6LQ2n3xpI+QO/BVZMDDM8nC0nU38qrNqDAKCPHe76HmY9KpFvlANP3pOocY4aFLkqdOqVBPBm32854pFReQ8PFwGfElI+SzBhqXFFAqC3NZFni2AKXoWpoFDkmszDog+fwULOk5JBQYujzPXnL0FOC/AAAA///RCPFCFz4pygAAAABJRU5ErkJggg==) | 2.11.1 | 对话界面与执行步骤展示 |
-| 向量数据库 | ![Milvus](https://img.shields.io/badge/Milvus-346EC9?style=for-the-badge&logo=milvus&logoColor=8BC0F0) | 3.0.0 | 本地向量存储、元数据过滤与 Top-K 检索 |
-| 文献管理&检索 | ![Arxiv](https://img.shields.io/badge/Arxiv-A02C24?style=for-the-badge&logo=arxiv) | 4.0.0 | arXiv 检索、元数据获取与 PDF 下载 |
-| 文献管理&检索 | ![Zotero](https://img.shields.io/badge/Zotero-952720?style=for-the-badge&logo=zotero)<br> ![WebDav](https://img.shields.io/badge/WebDAV-081D34?style=for-the-badge&logo=googlecloudstorage) | 1.13.2 / 3.14.7 | Zotero 文献查询与附件同步 |
-| PDF 解析 | ![MinerU](https://img.shields.io/badge/MinerU-FFFFFF?style=for-the-badge&logo=data:image/png;base64,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) | 3.4.2 | PDF 版面分析、OCR 及 Markdown/JSON 输出 |
-| PDF 辅助处理 | ![PyMuPDF](https://img.shields.io/badge/PyMuPDF-EFE9E3?style=for-the-badge&logo=data:image/png;base64,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) | 1.27.2.2 | 朴素 PDF 文本提取 |
-| .env 配置管理 | ![pydantic](https://img.shields.io/badge/Pydantic-D339E2?style=for-the-badge&logo=pydantic) | 2.14.2 | `.env` 配置加载与校验 |
-| 云端模型推理 | ![OpenAI](https://img.shields.io/badge/OpenAI-FFFFFF?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAAAAABXZoBIAAABEElEQVR4AbTJIWyDQACG0d+rWsxENQ6Jwi0YFLIWRTKFxecc6pIzJzF4QTKDT23lSby5BPUt6ZJe2i1ze/aJP/x/+ly5/z2PU7ne1rIYm4/tR9YDsNeaFqP3l9wFx6AJgPLylLN6rrpEcBaiQko6dR/YDq4659po55SL8D1ujI0MLGpbl/K84nr8SWbSCBj5lNrvWewQCy1wU0gZsDV+ABi603nHtI9sJ0KW9d/paCxBjwy6wawyQiwdg2VPiZeBY5S10j3XjJRNoxWMqn20DB4tKeeWTUWhDfqJsX9rSRl0gLUQe20McpCSSwWAUxdBgaek0rQ6lQEwFS/JZ1cNebWFrVaElInLlNmv0TNpYgIAMy6KDbFgKo8AAAAASUVORK5CYII=) | 可配置 | 调用 LLM 与 Embedding 模型 |
-| |![SiliconFlow](https://img.shields.io/badge/SiliconFlow-662DEC?style=for-the-badge&logo=data:image/png;base64,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&logoColor=white)| |LLM: DeepSeek-V4-Flash<br> Embedding: Qwen3-Embedding-8B<br> Reranker: Qwen3-Reranker-8B|
-| 本地模型推理 | ![Ollama](https://img.shields.io/badge/Ollama-000000?style=for-the-badge&logo=Ollama) | 0.6.2 | 提供本地模型推理服务 |
-| | ![Qwen](https://img.shields.io/badge/Qwen-132CF5?style=for-the-badge&logo=qwen&logoColor=white) | | LLM: Qwen3.6-27B<br> Embedding: Qwen3-Embedding-8B<br> Reranker: Qwen3-Reranker-8B |
+| 类别 | 技术 | 版本 | 用途 |
+|---|---|---|---|
+| Agent / RAG 框架 | LlamaIndex | 0.14.23 | Prompt、结构化输出、Embedding 与 RAG 组件 |
+| 工作流编排 | LangGraph | 1.2.7 | 基于 StateGraph 编排 Analyzer、Retriever、Evaluator、外部检索与 Writer |
+| 数据模型与配置 | Pydantic<br>pydantic-settings | 2.13.4<br>2.14.2 | 约束 LLM 结构化输出，管理状态与环境配置 |
+| 混合检索 | Milvus<br>pymilvus | 服务端可配置<br>2.6.17 | Dense + BM25 混合召回、元数据过滤与 RRF 融合排序 |
+| Embedding | Qwen3-Embedding-8B | 模型版本可配置 | 论文知识块向量化、查询向量化及 LoRA 微调 |
+| 云端推理 | OpenAI 兼容接口<br>DeepSeek-V4-Flash | 接口可配置<br>模型版本可配置 | Analyzer、Evaluator、Matcher 与 Writer 的默认推理服务 |
+| 本地推理 | Ollama<br>Qwen3.6-27B | 0.6+<br>模型版本可配置 | 云端发生 429、超时、连接失败或可恢复 5xx 时自动降级 |
+| 文献检索与下载 | Paper Search MCP<br>arXiv<br>Zotero<br>WebDAV | 未固定<br>4.0.0<br>1.13.2<br>3.14.7 | 论文搜索、元数据匹配、PDF 下载与附件同步 |
+| PDF 解析 | MinerU<br>PyMuPDF | 3.4.2<br>1.27.2.2 | 版面分析、OCR、Markdown/JSON 输出与朴素文本提取 |
+| 向量入库服务 | FastAPI<br>Uvicorn | 0.139.0<br>0.50.2 | 提供批量 PDF 解析、分块、Embedding 与 Milvus 入库接口 |
+| RAG 评测 | RAGAS | 0.3+ | 构建单论文、多论文和开放式问答评测数据 |
+| Embedding 微调 | PEFT<br>LoRA<br>InfoNCE | 0.17+<br>—<br>— | 构造 Hard Negative，训练 Adapter，并计算 Recall@K 与 MRR |
+| 交互界面 | Chainlit | 2.11.1 | 对话界面与执行步骤展示；当前仍需接入最新 LangGraph 工作流 |
+| 测试 | Pytest<br>pytest-asyncio | 8+<br>0.24+ | 路由、fallback、统计、数据构造与评测指标测试 |
+
 ---
 
-## 3DGS Agent Framework
-```text
+## GS-Agent Framework
 
+```mermaid
+flowchart TD
+    caller["Workflow Caller"] --> agent_workflow["LangGraph Agent Workflow"]
+
+    subgraph Agentic_RAG
+        agent_workflow --> analysis["Query Analysis<br/>Pydantic Schema"]
+        analysis --> retrieval["Hybrid Retrieval<br/>Dense + BM25 + RRF"]
+        retrieval --> evaluation["Evidence Evaluation<br/>Sufficient / Insufficient / Not Found"]
+        evaluation --> generation["Evidence-grounded Writer"]
+    end
+
+    retrieval <--> milvus[("Milvus<br/>Paper Chunks")]
+
+    evaluation -->|missing paper| external["External Search<br/>Paper MCP Client"]
+    external --> sources["arXiv / Other Sources"]
+    external --> ingestion["Match and Download PDF"]
+    ingestion --> parser["MinerU Parsing<br/>Section Tree and Sentence Chunks"]
+    parser --> embedding["Embedding"]
+    embedding --> milvus
+
+    batch["FastAPI Batch Ingestion"] --> parser
+
+    analysis -. LLM request .-> cloud["Cloud OpenAI-compatible LLM"]
+    evaluation -. LLM request .-> cloud
+    generation -. LLM request .-> cloud
+    external -. LLM request .-> cloud
+    cloud -. 429 / timeout / connection / transient 5xx .-> local["Local Ollama Fallback"]
 ```
+
 ## LangGraph Workflow
 
-```text
-                                                    START
-                                                      ↓
-                                                  User_Query
-                                                      ↓
-                                                    Analyzer
-                                                (Analyze_Query)
-                                                      ↓
-          ┌────────── → ─────── → ────── → ───── Retriever
-          │                                 (Retrieve_Knowledge)
-          ↑                                          ↓
-          │                                      Evaluator
-          │                                 (Evaluate_Retrieval)          
-          │                          ┌───────────────┴───────────────┐
-          │                          ↓                               ↓
-          │                    `insufficient`                   `sufficient`
-          │    ┌───────┬──────────── ↓ ────────────────────────┐     │ 
-          ↑    │Matcher│             │                         │     │
-          │    ├───────┘      search_on_arxiv                  │     ↓
-          │    │                 (MCP_Tools)                   │     │
-          │    │           ┌──────────┴──────────┐             │     │
-          │    │       `matched`            `unmatched`        │     │
-          │    │(Match_Paper_Metadata)           ↓             │     │
-          │    │           │                  /retry/          │     │
-          │    │           │           Search_On_Other_Source  │     │
-          ↑    │           │                (MCP_Tools)        │     │
-          │    │           │       ┌─────────────┴───────┐     │     ↓
-          │    │           │   `matched`            `unmatched`│     │
-          │    │           │       ↓                     ↓     │     │
-          │    │           └ Download_PDF            /Failed/  │     │ 
-          │    │              (MCP_Tools)                │     │     │
-          │    └────────────────── ↓ ─────────────────── ↓ ────┘     │
-          │                  Process_Papers      Manual_Processing   │
-          │                        ↓                                 │
-          ├──────────────── update_knowledge                         │
-          ↑                                  ┌───────────────────────┘
-          │                                  ↓
-          └────── `insufficient` ─── ResearchSynthesizer
-                                      (synthesize_answer)
-                                              ↓
-                                          `sufficient`
-                                              ↓
-                                            Writer
-                                              ↓
-                                             END
+```mermaid
+flowchart TD
+    start([START]) --> analyzer["analyzer<br/>Analyze query into structured retrieval plan"]
+    analyzer --> retriever["retriever<br/>Dense + BM25 hybrid retrieval"]
+    retriever --> evaluator["evaluator<br/>Evaluate retrieved evidence"]
 
+    evaluator -->|sufficient| writer["writer<br/>Generate evidence-grounded answer"]
+
+    evaluator -->|insufficient| increment["increment_research_round"]
+    increment --> round{"retrieval_round >= 3?"}
+    round -->|No| refine["refine_analysis<br/>Rewrite missing-information retrieval plan"]
+    refine --> retriever
+    round -->|Yes| writer
+
+    evaluator -->|not_found| external["external_search"]
+
+    subgraph External_Search_Internal_Processing
+        direction TB
+        target{"Named paper?"}
+        target -->|Yes| matcher["Matcher<br/>Search and validate metadata"]
+        matcher --> matched{"Matched?"}
+        matched -->|Yes| download["Download PDF"]
+        download --> process["MinerU parse → chunk → embed → Milvus"]
+        matched -->|No| record["Record not_found"]
+        target -->|No| broad["Broad multi-source paper search"]
+    end
+
+    external --> target
+    process --> updated{"knowledge_updated<br/>and external_search_round <= 2?"}
+    record --> updated
+    broad --> updated
+    updated -->|Yes| retriever
+    updated -->|No| writer
+
+    writer --> finish([END])
 ```
+
+## 可复现开发流程
+
+创建虚拟环境，并安装运行与测试依赖：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirement-dev.txt
+cp .env.example .env
+```
+
+运行 GS-Agent 测试集
+
+```bash
+python -m pytest
+```
+
+### 云端到本地的 LLM 的 auto fallback
+
+将 `GLOBLE_LOCAL_OPTIONAL` 设置为 `true`，并在
+`config/settings.py` 中配置 `Local_Model`。工作流会优先调用云端
+OpenAI 兼容接口；遇到 HTTP 429、请求超时、连接失败或可恢复的 5xx
+错误时，自动切换到本地 Ollama 模型重试。无效请求和结构化输出错误
+不会触发降级，避免掩盖真实的业务问题。
+
+### 核验论文与知识块数量
+
+确保 Milvus 正常运行后执行：
+
+```bash
+python -m tools.milvus_stats --json
+```
+
+统计报告会分别给出已解析论文目录数、Milvus 中去重后的 `paper_id`
+数量，以及实体/知识块总数。简历、README 或实验报告引用知识库规模时，
+应将该 JSON 结果与实验产物一同保存，保证数据可追溯。
+
+### Qwen Embedding 的 LoRA 与 InfoNCE 微调
+
+首先从原始 Milvus 索引的 Top-K 召回结果中挖掘 Hard Negative：
+
+```bash
+python -m tools.embedding_finetune.mine_hard_negatives \
+  --dataset GS_RAGAS_DATASET/questions.jsonl \
+  --output artifacts/embedding/mined_negatives.jsonl \
+  --top-k 20
+```
+
+随后将 Top-K Hard Negative 与跨论文混淆负样本、随机负样本组合，
+构建训练数据：
+
+```bash
+python -m tools.embedding_finetune.dataset \
+  --dataset GS_RAGAS_DATASET/questions.jsonl \
+  --mined-negatives artifacts/embedding/mined_negatives.jsonl \
+  --output artifacts/embedding/train.jsonl \
+  --negatives-per-query 4
+```
+
+先记录基础模型指标，再使用 InfoNCE Loss 训练 LoRA Adapter，最后在相同的
+独立测试集上评测微调模型：
+
+```bash
+python -m tools.embedding_finetune.evaluate \
+  --data artifacts/embedding/train.jsonl \
+  --model Qwen/Qwen3-Embedding-8B \
+  --output artifacts/embedding/baseline_metrics.json
+
+python -m tools.embedding_finetune.train \
+  --data artifacts/embedding/train.jsonl \
+  --model Qwen/Qwen3-Embedding-8B \
+  --output artifacts/embedding/qwen3-lora
+
+python -m tools.embedding_finetune.evaluate \
+  --data artifacts/embedding/train.jsonl \
+  --model Qwen/Qwen3-Embedding-8B \
+  --adapter artifacts/embedding/qwen3-lora \
+  --output artifacts/embedding/finetuned_metrics.json
+```
+
+只有当微调后的指标文件在独立测试集上显示 Recall@K、MRR 得到提升时，
+才能得出检索效果改善的结论。确定最终 Adapter 后，还需要使用微调模型
+重新生成论文向量并重建 Milvus Collection，之后才能对比实际环境中的
+Top-K 检索结果。
