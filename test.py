@@ -50,7 +50,7 @@ async def main():
 
     # # 3. Dense embedding + Milvus BM25 sparse indexing
     # embedded_nodes = embedding.embed_nodes(text_nodes)
-    milvus = MilvusHybridClient()
+    # milvus = MilvusHybridClient()
     # ids = milvus.add_documents(embedded_nodes)
     # print(f"写入 Milvus {len(ids)} 个文本块")
 
@@ -69,7 +69,7 @@ async def main():
     #     )
 
     result = await graph.ainvoke({
-        "user_query": "GS-SLAM的创新点是什么"
+        "user_query": "PrismGS的创新点是什么"
     })
 
     print(result.get("answer") or result.get("external_search_results") or result["retrieval_evaluated_result"])

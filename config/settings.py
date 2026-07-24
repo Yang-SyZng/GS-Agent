@@ -76,7 +76,7 @@ class Settings(BaseSettings):
 
     # api config
     api_host: str = "127.0.0.1"
-    api_port: int = 8000
+    api_port: int = 8001
     api_reload: bool = True
 
 
